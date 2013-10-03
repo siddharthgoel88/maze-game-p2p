@@ -51,6 +51,7 @@ public class P2Player {
 			try{
 				System.out.println("Primary sleeping for 20 secs.");
 				Thread.sleep(20000);
+				
 			}catch(Exception e){
 				e.printStackTrace();
 			}
