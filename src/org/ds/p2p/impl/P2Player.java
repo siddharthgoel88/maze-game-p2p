@@ -17,8 +17,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.ds.p2p.Bootstrapper;
+import org.ds.p2p.ClientHeartBeat;
+import org.ds.p2p.GameEndCheckThread;
+import org.ds.p2p.GameEndCheck;
 import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
+import org.ds.p2p.HeartBeatThread;
 import org.ds.p2p.Nominator;
 import org.ds.p2p.PeerProperties;
 import org.ds.p2p.Player;
@@ -51,12 +55,29 @@ public class P2Player {
 			try{
 				System.out.println("Primary sleeping for 20 secs.");
 				Thread.sleep(20000);
-				
+				System.out.println("Initiated Heart beat checks.");
+				Thread heartBeatChecker = new Thread(new HeartBeatChecker());
+        		heartBeatChecker.start();
 			}catch(Exception e){
 				e.printStackTrace();
 			}
 		}
+		initHeartBeat();
+		initGameEndCheck();
 		playGame();	
+	}
+
+	private void initGameEndCheck() {
+		GameEndCheckThread gmc = new GameEndCheckThread();
+		Thread t = new Thread(gmc);
+		t.start();
+	}
+
+	private void initHeartBeat() {
+		HeartBeatThread hbt = new HeartBeatThread();
+		hbt.setPlayer(gamePlayer);
+		Thread t = new Thread(hbt);
+		t.start();
 	}
 
 	private void playGame() {
@@ -95,6 +116,7 @@ public class P2Player {
 			}else if(move.equals("k")){
 				movePlayerStub.move(gamePlayer.getId(), move);
 				System.out.println("Game stopped voluntarily. Please play again.");
+				System.exit(2);
 			}else{
 				System.out.println("Invalid Move!");
 			}
@@ -117,9 +139,14 @@ public class P2Player {
         		registry = RegistryManager.initRegistry(1099);
         		RegistryManager.setPrimaryRegistry(registry);
         		BootstrapperImpl bootstrapper = new BootstrapperImpl();
+        		ClientHeartBeatImpl heartBeatImpl = new ClientHeartBeatImpl();
+        		GameEndCheckImpl gameEndCheck = new GameEndCheckImpl();
+        		
         		MovePlayersImpl movePlayers = new MovePlayersImpl();
         		registry.bind("bootstrapper", (Bootstrapper)UnicastRemoteObject.exportObject( bootstrapper , 0));
         		registry.bind("move", (MovePlayers) UnicastRemoteObject.exportObject( movePlayers , 0));
+        		registry.bind("heartBeat", (ClientHeartBeat) UnicastRemoteObject.exportObject( heartBeatImpl , 0));
+        		registry.bind("gameEnd", (GameEndCheck) UnicastRemoteObject.exportObject( gameEndCheck , 0));
         		peerProp.setPrimary(true);
         		System.out.println("You are the game initiater.\nPlease enter size of board and total number of treasures: ");
         		BufferedReader boardSize = new BufferedReader(new InputStreamReader(System.in));
@@ -133,7 +160,7 @@ public class P2Player {
         		gamePlayer.setPlayerDispId('A');
         		state.getPlayers().put(playerUUID, gamePlayer);
         		while(!state.initializePlayer(playerUUID));
-        		peerProp.getPrimaryProperties().put("machineIP", machineIp); //TODO: is it right machineIP or ip?
+        		peerProp.getPrimaryProperties().put("ip", machineIp); //TODO: is it right machineIP or ip?
         		peerProp.getPrimaryProperties().put("port", "1099");
         		state.setNumPlayers(1);
         		System.out.println("\nPrimary is ready !");

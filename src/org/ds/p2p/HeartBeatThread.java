@@ -1,8 +1,8 @@
 package org.ds.p2p;
 
 import java.rmi.RemoteException;
-import org.ds.p2p.ClientHeartBeat;
-import org.ds.p2p.Player;
+
+import org.ds.p2p.impl.RegistryManager;
 
 public class HeartBeatThread implements Runnable{
 	
@@ -11,17 +11,21 @@ public class HeartBeatThread implements Runnable{
 	
 	@Override
 	public void run() {
-		heartBeat = RMIClientManagerFactory.getRMIClientManager().getHeartBeatStub();
+		try {
+			heartBeat = (ClientHeartBeat) RegistryManager.getPrimaryRegistry().lookup("heartBeat");
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 		
 		while(true){
-			
 			try {
-				
 				heartBeat.updateHeartBeat(player.getId());
 				Thread.sleep(10000);
-				
-			} catch (InterruptedException e) { 
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			} catch (RemoteException re){
+				// TODO : Just keep a check here. 
+				re.printStackTrace();
 			}
 		}
 	}

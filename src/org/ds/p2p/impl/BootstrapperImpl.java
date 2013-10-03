@@ -28,12 +28,12 @@ public class BootstrapperImpl implements Bootstrapper{
 		String uuid = playerProperties.get("uuid");
 
 		try {
-			String primaryIP = (String) peerProp.getPrimaryProperties().get("machineIP");
+			String primaryIP = (String) peerProp.getPrimaryProperties().get("ip");
 			Nominator nominator = (Nominator) registry.lookup(uuid);
 			if(state.getNumPlayers() == 1){
 				System.out.println("Backup server has arrived");
 				gameProps.put("isNominated", true);
-				gameProps.put("isSameMachine", primaryIP.equals(playerProperties.get("machineIP"))?true:false);
+				gameProps.put("isSameMachine", primaryIP.equals(playerProperties.get("ip"))?true:false);
 				nominator.nominate(gameProps);
 				state.setNumPlayers(state.getNumPlayers()+1);
 				peerProp.getSecondaryPeerIp().put("uuid", uuid);
