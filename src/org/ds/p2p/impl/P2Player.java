@@ -120,7 +120,12 @@ public class P2Player {
         		registry.bind("bootstrapper", (Bootstrapper)UnicastRemoteObject.exportObject( bootstrapper , 0));
         		registry.bind("move", (MovePlayers) UnicastRemoteObject.exportObject( movePlayers , 0));
         		peerProp.setPrimary(true);
+        		System.out.println("You are the game initiater.\nPlease enter size of board and total number of treasures: ");
+        		BufferedReader boardSize = new BufferedReader(new InputStreamReader(System.in));
+        		BufferedReader numTreasure = new BufferedReader(new InputStreamReader(System.in));
         		state = GameStateFactory.getGameState();
+        		state.setBoardSize(Integer.parseInt(boardSize.readLine().toString()));
+        		state.setTotalNumTreasures(Integer.parseInt(numTreasure.readLine().toString()));
         		state.initializeGame();
         		peerProp.setInitTime(System.currentTimeMillis() + 20000);
         		gamePlayer = new Player(name , playerUUID);
@@ -129,10 +134,10 @@ public class P2Player {
         		peerProp.getPrimaryProperties().put("machineIP", machineIp);
         		peerProp.getPrimaryProperties().put("port", "1099");
         		state.setNumPlayers(1);
-        		System.out.println("Primary is ready !");
+        		System.out.println("\nPrimary is ready !");
         		isPrimary = true;
         	}catch(Exception createException){
-        		System.out.println("Primary server already exists on this machine.");
+        		System.out.println("\nPrimary server already exists on this machine.");
         	}
         }
 
@@ -150,6 +155,8 @@ public class P2Player {
 				playerProps.put("machineIP" , machineIp);
 				playerProps.put("name" , name);
 				Map<String, Object> props = bootstrap.bootstrap(playerProps);
+				gamePlayer = new Player(name , playerUUID);
+				gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
 				Long waitTime = (Long) props.get("waitTime");
 				System.out.println("Expected waiting time:" + waitTime/1000);
 				Thread.sleep(waitTime);

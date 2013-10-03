@@ -29,9 +29,9 @@ public class BootstrapperImpl implements Bootstrapper{
 		gameProps.put("waitTime", peerProp.getInitTime()-System.currentTimeMillis());
 		
 		try {
+			String primaryIP = (String) peerProp.getPrimaryProperties().get("machineIP");
 			Nominator nominator = (Nominator) registry.lookup(uuid);
 			if(state.getNumPlayers() == 1){
-				String primaryIP = (String) peerProp.getPrimaryProperties().get("machineIP");
 				System.out.println("Backup server has arrived");
 				gameProps.put("isNominated", true);
 				gameProps.put("isSameMachine", primaryIP.equals(playerProperties.get("machineIP"))?true:false);
@@ -41,12 +41,13 @@ public class BootstrapperImpl implements Bootstrapper{
 				peerProp.getSecondaryPeerIp().put("ip", playerProperties.get("machineIP"));
 				
 				if(primaryIP.equals(playerProperties.get("machineIP"))){
-					peerProp.getSecondaryPeerIp().put("port", playerProperties.get("1100"));
+					peerProp.getSecondaryPeerIp().put("port", "1100"); //TODO: Looks incorrect, so changed
 				}else{
-					peerProp.getSecondaryPeerIp().put("port", playerProperties.get("1099"));
+					peerProp.getSecondaryPeerIp().put("port", "1099"); //TODO: Looks incorrect, so changed
 				}
 			}else{
 				gameProps.put( "isNominated", false );
+				gameProps.put("isSameMachine", primaryIP.equals(playerProperties.get("machineIP"))?true:false);
 				nominator.nominate( gameProps );
 				state.setNumPlayers( state.getNumPlayers() + 1 );
 			}
@@ -56,6 +57,7 @@ public class BootstrapperImpl implements Bootstrapper{
 		gameProps.put("waitTime", peerProp.getInitTime() - System.currentTimeMillis());
 		Player player = new Player( name , uuid);
 		player.setPlayerDispId( playerDispId++ );
+		gameProps.put("playerDispId", playerDispId);
 		state.getPlayers().put( uuid, player );
 		while(!state.initializePlayer(uuid));
 		return gameProps;
