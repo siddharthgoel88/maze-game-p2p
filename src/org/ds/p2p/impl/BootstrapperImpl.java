@@ -26,8 +26,7 @@ public class BootstrapperImpl implements Bootstrapper{
 		PeerProperties peerProp = P2Player.getPeerProp();
 		String name = playerProperties.get("name");
 		String uuid = playerProperties.get("uuid");
-		gameProps.put("waitTime", peerProp.getInitTime()-System.currentTimeMillis());
-		
+
 		try {
 			String primaryIP = (String) peerProp.getPrimaryProperties().get("machineIP");
 			Nominator nominator = (Nominator) registry.lookup(uuid);

@@ -131,7 +131,8 @@ public class P2Player {
         		gamePlayer = new Player(name , playerUUID);
         		gamePlayer.setPlayerDispId('A');
         		state.getPlayers().put(playerUUID, gamePlayer);
-        		peerProp.getPrimaryProperties().put("machineIP", machineIp);
+        		while(!state.initializePlayer(playerUUID));
+        		peerProp.getPrimaryProperties().put("machineIP", machineIp); //TODO: is it right machineIP or ip?
         		peerProp.getPrimaryProperties().put("port", "1099");
         		state.setNumPlayers(1);
         		System.out.println("\nPrimary is ready !");
@@ -149,7 +150,7 @@ public class P2Player {
 				registry.bind(playerUUID ,(Nominator) UnicastRemoteObject.exportObject( nominator, 0));
 				Map<String,String> playerProps = new HashMap<String, String>();
 				Bootstrapper bootstrap = (Bootstrapper) registry.lookup("bootstrapper");
-				peerProp.getPrimaryProperties().put("ip", primaryIP);
+				peerProp.getPrimaryProperties().put("ip", primaryIP); //TODO: see the above todo
 				peerProp.getPrimaryProperties().put("port", 1099);
 				playerProps.put("uuid", playerUUID);
 				playerProps.put("machineIP" , machineIp);
@@ -158,7 +159,7 @@ public class P2Player {
 				gamePlayer = new Player(name , playerUUID);
 				gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
 				Long waitTime = (Long) props.get("waitTime");
-				System.out.println("Expected waiting time:" + waitTime/1000);
+				System.out.println("Expected waiting time:" + waitTime/1000 + "seconds.");
 				Thread.sleep(waitTime);
 			} catch (Exception cannotContact) {
 				cannotContact.printStackTrace();
