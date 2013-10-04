@@ -26,6 +26,9 @@ public class RegistryManager {
 		RegistryManager.registry = LocateRegistry.getRegistry(ip, port);
 	}
 
+	public static void setRegistry(Registry registry){
+		RegistryManager.registry = registry;
+	}
 	public static Registry getPrimaryRegistry() {
 		return primaryRegistry;
 	}

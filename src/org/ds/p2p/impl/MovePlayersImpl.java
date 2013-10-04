@@ -1,9 +1,12 @@
 package org.ds.p2p.impl;
 
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.MoveConstants;
@@ -21,17 +24,46 @@ public class MovePlayersImpl implements MovePlayers{
 	
 	public synchronized Map<String,Object> move(String id, String move) throws RemoteException {
 		Player player = state.getPlayers().get(id);
+		BackupUpdates updateBackup = null;
 		
+		try{
+			Registry bkpRegistry = LocateRegistry.getRegistry((String)P2Player.getPeerProp().getSecondaryPeerIp().get("ip"), Integer.parseInt((String)P2Player.getPeerProp().getSecondaryPeerIp().get("port")));
+			updateBackup = (BackupUpdates) bkpRegistry.lookup("updateBackup");
+		}catch(Exception bkpConException){
+			System.out.println("Cannot connect to backup. Nominating new backup.");
+			updateBackup = nominateAltBackup();
+			bkpConException.printStackTrace();
+		}
 		if(move.equals(MoveConstants.KILL)){
 			state.cleanUpPlayer(player);
 			System.out.println("Player " + player.getName() + " quited voluntarily");
+			updateBackup.updateMove(state);
 			return null;
 		}
 		
 		Map<String,Object> map = moveIfValid(player, move);
+		
+		if(!move.equals(MoveConstants.NOMOVE))
+			updateBackup.updateMove(state);
 		return map;
 	}
 	
+	private BackupUpdates nominateAltBackup() {
+		HashMap<String, String> playerProps = P2Player.getPeerProp().getOtherPlayerProps();
+		String nextbkp =  (String) playerProps.keySet().toArray()[0];
+		P2Player.getPeerProp().getSecondaryPeerIp().put("ip", playerProps.get(nextbkp).split(":")[0]);
+		P2Player.getPeerProp().getSecondaryPeerIp().put("port", playerProps.get(nextbkp).split(":")[1]);
+		Registry bkpRegistry = null;
+		BackupUpdates updates = null;
+		try {
+			bkpRegistry = LocateRegistry.getRegistry((String)P2Player.getPeerProp().getSecondaryPeerIp().get("ip"), Integer.parseInt((String)P2Player.getPeerProp().getSecondaryPeerIp().get("port")));
+			updates = (BackupUpdates) bkpRegistry.lookup("updateBackup");
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		return updates; 
+	}
+
 	private Map<String,Object> moveIfValid(Player player, String move) {
 		
 		int resCol=player.getCurrentCol(),resRow = player.getCurrentRow();

@@ -1,16 +1,24 @@
 package org.ds.p2p;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 
-public class PeerProperties {
+public class PeerProperties implements Serializable{
 	
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5024161539536334595L;
 	boolean isPrimary = false;
 	boolean isBackup = false;
 	String myIP = null;
+	int myRMIport;
 	Long initTime;
 	HashMap<String,Object> primaryProperties = new HashMap<String, Object>();
 	HashMap<String,Object> secondaryProperties = new HashMap<String, Object>();
+	HashMap<String, String> otherPlayerProps = new HashMap<String, String>(); 
 	
 	public boolean isPrimary() {
 		return isPrimary;
@@ -54,5 +62,21 @@ public class PeerProperties {
 
 	public void setInitTime(Long initTime) {
 		this.initTime = initTime;
+	}
+
+	public HashMap<String, String> getOtherPlayerProps() {
+		return otherPlayerProps;
+	}
+
+	public void setOtherPlayerProps(HashMap<String, String> otherPlayerProps) {
+		this.otherPlayerProps = otherPlayerProps;
+	}
+
+	public int getMyRMIport() {
+		return myRMIport;
+	}
+
+	public void setMyRMIport(int myRMIport) {
+		this.myRMIport = myRMIport;
 	}
 }

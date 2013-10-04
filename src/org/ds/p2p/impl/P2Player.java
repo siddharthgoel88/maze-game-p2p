@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.Bootstrapper;
 import org.ds.p2p.ClientHeartBeat;
 import org.ds.p2p.GameEndCheckThread;
@@ -52,6 +53,8 @@ public class P2Player {
 			try{
 				System.out.println("Primary sleeping for 20 secs.");
 				Thread.sleep(20000);
+				System.out.println("Sending peer props");
+				updateBackupPeerProps();
 			}catch(Exception e){
 				e.printStackTrace();
 			}
@@ -60,6 +63,16 @@ public class P2Player {
 		initHeartBeat();
 		initGameEndCheck();
 		playGame();	
+	}
+
+	private void updateBackupPeerProps() {
+		try{
+			Registry reg = LocateRegistry.getRegistry((String) peerProp.getSecondaryPeerIp().get("ip") , Integer.parseInt((String)peerProp.getSecondaryPeerIp().get("port")));
+			BackupUpdates bkp = (BackupUpdates) reg.lookup("updateBackup");
+			bkp.updatePeerProps(peerProp);
+		}catch(Exception e){
+			e.printStackTrace();
+		}	
 	}
 
 	private void initGameEndCheck() {
@@ -162,9 +175,26 @@ public class P2Player {
 		Bootstrapper bootstrap = (Bootstrapper) registry.lookup("bootstrapper");
 		peerProp.getPrimaryProperties().put("ip", primaryIP); //TODO: see the above todo
 		peerProp.getPrimaryProperties().put("port", 1099);
+		Integer seed = 1099;
+		
+		while(true){
+			try{
+				Registry reg = findLocalRegistryPort(seed);
+				RegistryManager.setRegistry(reg);
+				System.out.println("Registry initiated on port "+seed);
+				break;
+			}catch(RemoteException re){
+				System.out.println(seed + " Not free");
+				seed++;
+			}
+		}
+		
 		playerProps.put("uuid", playerUUID);
 		playerProps.put("machineIP" , machineIp);
+		playerProps.put("port", seed.toString());
 		playerProps.put("name" , name);
+		peerProp.setMyIP(machineIp);
+		peerProp.setMyRMIport(seed);
 		Map<String, Object> props = bootstrap.bootstrap(playerProps);
 		nominator.nominate(props);
 		gamePlayer = new Player(name , playerUUID);
@@ -172,6 +202,10 @@ public class P2Player {
 		Long waitTime = (Long) props.get("waitTime");
 		System.out.println("Expected waiting time:" + waitTime/1000 + "seconds.");
 		Thread.sleep(waitTime);
+	}
+
+	private Registry findLocalRegistryPort(int port) throws RemoteException {
+		return LocateRegistry.createRegistry(port);
 	}
 
 	private boolean initPrimary(String name, String playerUUID, String machineIp) throws RemoteException, AlreadyBoundException, AccessException , IOException {
