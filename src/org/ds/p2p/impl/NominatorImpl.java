@@ -1,6 +1,5 @@
 package org.ds.p2p.impl;
 
-import java.rmi.RemoteException;
 import java.util.Map;
 
 import org.ds.p2p.Nominator;
@@ -9,7 +8,7 @@ import org.ds.p2p.PeerProperties;
 public class NominatorImpl implements Nominator {
 
 	@Override
-	public void nominate(Map<String,Object> gameProps) throws RemoteException{
+	public void nominate(Map<String,Object> gameProps) {
 		
 		PeerProperties peerPros = P2Player.getPeerProp();
 		if((Boolean) gameProps.get("isNominated")){

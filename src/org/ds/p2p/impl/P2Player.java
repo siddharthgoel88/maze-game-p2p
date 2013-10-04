@@ -3,15 +3,13 @@ package org.ds.p2p.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import java.rmi.AccessException;
+import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -23,7 +21,6 @@ import org.ds.p2p.GameEndCheck;
 import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.HeartBeatThread;
-import org.ds.p2p.Nominator;
 import org.ds.p2p.PeerProperties;
 import org.ds.p2p.Player;
 import org.ds.p2p.MovePlayers;
@@ -55,13 +52,11 @@ public class P2Player {
 			try{
 				System.out.println("Primary sleeping for 20 secs.");
 				Thread.sleep(20000);
-				System.out.println("Initiated Heart beat checks.");
-				Thread heartBeatChecker = new Thread(new HeartBeatChecker());
-        		heartBeatChecker.start();
 			}catch(Exception e){
 				e.printStackTrace();
 			}
 		}
+		
 		initHeartBeat();
 		initGameEndCheck();
 		playGame();	
@@ -78,6 +73,13 @@ public class P2Player {
 		hbt.setPlayer(gamePlayer);
 		Thread t = new Thread(hbt);
 		t.start();
+		
+		if(peerProp.isPrimary()){
+			System.out.println("Initiated Heart beat checks.");
+			Thread heartBeatChecker = new Thread(new HeartBeatChecker());
+    		heartBeatChecker.start();
+		}
+		
 	}
 
 	private void playGame() {
@@ -92,7 +94,7 @@ public class P2Player {
 		
 		try{
 			Map<String, Object> movePlMap = movePlayerStub.move(gamePlayer.getId(), "x");
-			printState((GameState) movePlMap.get("currentState"));
+			PlayerUtils.printState((GameState) movePlMap.get("currentState"));
 		}catch(RemoteException re){
 			re.printStackTrace();
 		}
@@ -111,7 +113,7 @@ public class P2Player {
 				if( !Boolean.valueOf((String) moveResult.get("isSuccessful")) ){
 					System.out.println("Player move invalid.");
 				}else{
-					printState((GameState) moveResult.get("currentState"));
+					PlayerUtils.printState((GameState) moveResult.get("currentState"));
 				}
 			}else if(move.equals("k")){
 				movePlayerStub.move(gamePlayer.getId(), move);
@@ -129,42 +131,13 @@ public class P2Player {
 	private boolean initGame(String primaryIP , String name) {
 		boolean isPrimary = false;
 		String playerUUID = UUID.randomUUID().toString();
-		String machineIp = getIP4Adress();
+		String machineIp = PlayerUtils.getIP4Adress();
+		System.out.println(machineIp);
 		peerProp.setMyIP(machineIp);
 		
         if(primaryIP.equals(machineIp)){
-        	Registry registry = null;
-        	
         	try {
-        		registry = RegistryManager.initRegistry(1099);
-        		RegistryManager.setPrimaryRegistry(registry);
-        		BootstrapperImpl bootstrapper = new BootstrapperImpl();
-        		ClientHeartBeatImpl heartBeatImpl = new ClientHeartBeatImpl();
-        		GameEndCheckImpl gameEndCheck = new GameEndCheckImpl();
-        		
-        		MovePlayersImpl movePlayers = new MovePlayersImpl();
-        		registry.bind("bootstrapper", (Bootstrapper)UnicastRemoteObject.exportObject( bootstrapper , 0));
-        		registry.bind("move", (MovePlayers) UnicastRemoteObject.exportObject( movePlayers , 0));
-        		registry.bind("heartBeat", (ClientHeartBeat) UnicastRemoteObject.exportObject( heartBeatImpl , 0));
-        		registry.bind("gameEnd", (GameEndCheck) UnicastRemoteObject.exportObject( gameEndCheck , 0));
-        		peerProp.setPrimary(true);
-        		System.out.println("You are the game initiater.\nPlease enter size of board and total number of treasures: ");
-        		BufferedReader boardSize = new BufferedReader(new InputStreamReader(System.in));
-        		BufferedReader numTreasure = new BufferedReader(new InputStreamReader(System.in));
-        		state = GameStateFactory.getGameState();
-        		state.setBoardSize(Integer.parseInt(boardSize.readLine().toString()));
-        		state.setTotalNumTreasures(Integer.parseInt(numTreasure.readLine().toString()));
-        		state.initializeGame();
-        		peerProp.setInitTime(System.currentTimeMillis() + 20000);
-        		gamePlayer = new Player(name , playerUUID);
-        		gamePlayer.setPlayerDispId('A');
-        		state.getPlayers().put(playerUUID, gamePlayer);
-        		while(!state.initializePlayer(playerUUID));
-        		peerProp.getPrimaryProperties().put("ip", machineIp); //TODO: is it right machineIP or ip?
-        		peerProp.getPrimaryProperties().put("port", "1099");
-        		state.setNumPlayers(1);
-        		System.out.println("\nPrimary is ready !");
-        		isPrimary = true;
+        		isPrimary = initPrimary(name, playerUUID, machineIp);
         	}catch(Exception createException){
         		System.out.println("\nPrimary server already exists on this machine.");
         	}
@@ -173,22 +146,7 @@ public class P2Player {
 		if(!isPrimary){
 			NominatorImpl nominator = new NominatorImpl();
 			try {
-				Registry registry = LocateRegistry.getRegistry(primaryIP, 1099);
-				RegistryManager.setPrimaryRegistry(registry);
-				registry.bind(playerUUID ,(Nominator) UnicastRemoteObject.exportObject( nominator, 0));
-				Map<String,String> playerProps = new HashMap<String, String>();
-				Bootstrapper bootstrap = (Bootstrapper) registry.lookup("bootstrapper");
-				peerProp.getPrimaryProperties().put("ip", primaryIP); //TODO: see the above todo
-				peerProp.getPrimaryProperties().put("port", 1099);
-				playerProps.put("uuid", playerUUID);
-				playerProps.put("machineIP" , machineIp);
-				playerProps.put("name" , name);
-				Map<String, Object> props = bootstrap.bootstrap(playerProps);
-				gamePlayer = new Player(name , playerUUID);
-				gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
-				Long waitTime = (Long) props.get("waitTime");
-				System.out.println("Expected waiting time:" + waitTime/1000 + "seconds.");
-				Thread.sleep(waitTime);
+				initPlayer(primaryIP, name, playerUUID, machineIp, nominator);
 			} catch (Exception cannotContact) {
 				cannotContact.printStackTrace();
 				return false;
@@ -196,44 +154,67 @@ public class P2Player {
 		}
 	  return true;
 	}
-	
-	public static void printState(GameState initState) {
-		org.ds.p2p.Square[][] square = initState.getGameBoard();
-		Map<String,Player> players = initState.getPlayers();
-		int boardsize = initState.getBoardSize();
-				
-		for (int i=0 ; i < boardsize ; i++){
-			System.out.println("\n");
-			for(int j=0 ; j < boardsize ; j++){
-				if(!square[i][j].isFree()){
-					Player curPlayer = players.get(square[i][j].getUserId());
-					System.out.print(curPlayer.getPlayerDispId() + "(" + curPlayer.getNumTreasures() + ")" + "\t");
-				}else{
-					System.out.print(square[i][j].getNumTreasures() + "\t");
-				}
-			}
+
+	private void initPlayer(String primaryIP, String name, String playerUUID,String machineIp, NominatorImpl nominator) throws RemoteException,AlreadyBoundException, AccessException, NotBoundException, InterruptedException {
+		Registry registry = LocateRegistry.getRegistry(primaryIP, 1099);
+		RegistryManager.setPrimaryRegistry(registry);
+		Map<String,String> playerProps = new HashMap<String, String>();
+		Bootstrapper bootstrap = (Bootstrapper) registry.lookup("bootstrapper");
+		peerProp.getPrimaryProperties().put("ip", primaryIP); //TODO: see the above todo
+		peerProp.getPrimaryProperties().put("port", 1099);
+		playerProps.put("uuid", playerUUID);
+		playerProps.put("machineIP" , machineIp);
+		playerProps.put("name" , name);
+		Map<String, Object> props = bootstrap.bootstrap(playerProps);
+		nominator.nominate(props);
+		gamePlayer = new Player(name , playerUUID);
+		gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
+		Long waitTime = (Long) props.get("waitTime");
+		System.out.println("Expected waiting time:" + waitTime/1000 + "seconds.");
+		Thread.sleep(waitTime);
+	}
+
+	private boolean initPrimary(String name, String playerUUID, String machineIp) throws RemoteException, AlreadyBoundException, AccessException , IOException {
+		boolean isPrimary;
+		Registry registry;
+		registry = RegistryManager.initRegistry(1099);
+		RegistryManager.setPrimaryRegistry(registry);
+		BootstrapperImpl bootstrapper = new BootstrapperImpl();
+		ClientHeartBeatImpl heartBeatImpl = new ClientHeartBeatImpl();
+		GameEndCheckImpl gameEndCheck = new GameEndCheckImpl();
+		
+		MovePlayersImpl movePlayers = new MovePlayersImpl();
+		registry.bind("bootstrapper", (Bootstrapper)UnicastRemoteObject.exportObject( bootstrapper , 0));
+		registry.bind("move", (MovePlayers) UnicastRemoteObject.exportObject( movePlayers , 0));
+		registry.bind("heartBeat", (ClientHeartBeat) UnicastRemoteObject.exportObject( heartBeatImpl , 0));
+		registry.bind("gameEnd", (GameEndCheck) UnicastRemoteObject.exportObject( gameEndCheck , 0));
+		peerProp.setPrimary(true);
+		System.out.println("You are the game initiater.\nPlease enter size of board and total number of treasures: ");
+		BufferedReader boardSize = new BufferedReader(new InputStreamReader(System.in));
+		BufferedReader numTreasure = new BufferedReader(new InputStreamReader(System.in));
+		state = GameStateFactory.getGameState();
+		String boardString = boardSize.readLine();
+		String totalTreasures = numTreasure.readLine();
+		
+		if(boardString == null || totalTreasures == null){
+			state.setBoardSize(5);
+			state.setTotalNumTreasures(15);
+		}else{
+			state.setBoardSize(Integer.parseInt(boardString));
+			state.setTotalNumTreasures(Integer.parseInt(totalTreasures));
 		}
 		
-		for(int i=0;i++<5;)
-			System.out.println("");
-	}
-	
-	public String getIP4Adress(){
-		try {
-			Enumeration<NetworkInterface> netInterfaces = NetworkInterface.getNetworkInterfaces();
-			while (netInterfaces.hasMoreElements()) {
-	            NetworkInterface iface = netInterfaces.nextElement();    
-	            Enumeration<InetAddress> addresses = iface.getInetAddresses();
-	            while(addresses.hasMoreElements()) {
-	                InetAddress addr = addresses.nextElement();
-	                if(addr instanceof Inet4Address && !addr.isAnyLocalAddress()){
-	                	return addr.getHostAddress();
-	                }
-	            }
-			}    
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
-		return null;
+		state.initializeGame();
+		peerProp.setInitTime(System.currentTimeMillis() + 20000);
+		gamePlayer = new Player(name , playerUUID);
+		gamePlayer.setPlayerDispId('A');
+		state.getPlayers().put(playerUUID, gamePlayer);
+		while(!state.initializePlayer(playerUUID));
+		peerProp.getPrimaryProperties().put("ip", machineIp); //TODO: is it right machineIP or ip?
+		peerProp.getPrimaryProperties().put("port", "1099");
+		state.setNumPlayers(1);
+		System.out.println("\nPrimary is ready !");
+		isPrimary = true;
+		return isPrimary;
 	}
 }
