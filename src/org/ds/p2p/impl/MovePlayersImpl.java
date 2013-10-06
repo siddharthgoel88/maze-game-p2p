@@ -5,18 +5,21 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.MoveConstants;
 import org.ds.p2p.MovePlayers;
+import org.ds.p2p.PeerProperties;
 import org.ds.p2p.Player;
 import org.ds.p2p.Square;
 
 public class MovePlayersImpl implements MovePlayers{
 	GameState state;
 	static int maxTreasure=0;
+	boolean isAnyBackupAvailable = true;
 	
 	public MovePlayersImpl(){
 		state = GameStateFactory.getGameState();
@@ -30,9 +33,16 @@ public class MovePlayersImpl implements MovePlayers{
 			Registry bkpRegistry = LocateRegistry.getRegistry((String)P2Player.getPeerProp().getSecondaryPeerIp().get("ip"), Integer.parseInt((String)P2Player.getPeerProp().getSecondaryPeerIp().get("port")));
 			updateBackup = (BackupUpdates) bkpRegistry.lookup("updateBackup");
 		}catch(Exception bkpConException){
-			System.out.println("Cannot connect to backup. Nominating new backup.");
-			updateBackup = nominateAltBackup();
-			bkpConException.printStackTrace();
+			if(state.getNumPlayers() > 2){
+				System.out.println("Cannot connect to backup. Nominating new backup.");
+				updateBackup = nominateAltBackup();
+				if(updateBackup == null){
+					isAnyBackupAvailable = false;
+				}
+			}else{
+				System.out.println("Cannot connect to backup. Cannot nominate new backup.");
+				isAnyBackupAvailable = false;
+			}
 		}
 		if(move.equals(MoveConstants.KILL)){
 			state.cleanUpPlayer(player);
@@ -43,25 +53,41 @@ public class MovePlayersImpl implements MovePlayers{
 		
 		Map<String,Object> map = moveIfValid(player, move);
 		
-		if(!move.equals(MoveConstants.NOMOVE))
+		if( !move.equals(MoveConstants.NOMOVE) && isAnyBackupAvailable )
 			updateBackup.updateMove(state);
 		return map;
 	}
 	
-	private BackupUpdates nominateAltBackup() {
+	public BackupUpdates nominateAltBackup() {
+		
 		HashMap<String, String> playerProps = P2Player.getPeerProp().getOtherPlayerProps();
-		String nextbkp =  (String) playerProps.keySet().toArray()[0];
-		P2Player.getPeerProp().getSecondaryPeerIp().put("ip", playerProps.get(nextbkp).split(":")[0]);
-		P2Player.getPeerProp().getSecondaryPeerIp().put("port", playerProps.get(nextbkp).split(":")[1]);
+		Set<String> nextbkp =  playerProps.keySet();
 		Registry bkpRegistry = null;
 		BackupUpdates updates = null;
-		try {
-			bkpRegistry = LocateRegistry.getRegistry((String)P2Player.getPeerProp().getSecondaryPeerIp().get("ip"), Integer.parseInt((String)P2Player.getPeerProp().getSecondaryPeerIp().get("port")));
-			updates = (BackupUpdates) bkpRegistry.lookup("updateBackup");
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
-		return updates; 
+		String ip = null , port = null;
+		boolean nominateSuccessful = false;
+		
+		for(String otherPlayerHosts : nextbkp){
+			ip = playerProps.get(otherPlayerHosts).split(":")[0];
+			port = playerProps.get(otherPlayerHosts).split(":")[1];
+			
+			try {
+				bkpRegistry = LocateRegistry.getRegistry( ip , Integer.parseInt(port) );
+				updates = (BackupUpdates) bkpRegistry.lookup("updateBackup");
+				nominateSuccessful = true;
+				break;
+			}  catch (Exception e) {
+				System.out.println("Player has quit but system not yet detected the exit. Nominating the next player as backup");
+			}
+		}
+		if(nominateSuccessful){
+			P2Player.getPeerProp().getSecondaryPeerIp().put("ip", ip);
+			P2Player.getPeerProp().getSecondaryPeerIp().put("port", port);
+		}else{
+			System.out.println("No players available for backup! Thanks for your keen interest in the game. Please play again");
+			System.exit(4);
+		}
+		return updates;
 	}
 
 	private Map<String,Object> moveIfValid(Player player, String move) {

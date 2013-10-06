@@ -20,7 +20,7 @@ public class HeartBeatThread implements Runnable{
 		while(true){
 			try {
 				heartBeat.updateHeartBeat(player.getId());
-				Thread.sleep(10000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} catch (RemoteException re){

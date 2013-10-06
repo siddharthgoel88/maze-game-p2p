@@ -1,7 +1,12 @@
 package org.ds.p2p.impl;
 
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Set;
 
+import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.Player;
@@ -20,14 +25,38 @@ public class HeartBeatChecker implements Runnable {
 				long curTime = System.currentTimeMillis();
 				
 				for (Player p : players) {
-					if (p.getLastActiveTime() != 0) {
-						if ((curTime - p.getLastActiveTime()) > 10000) {
-							System.out.println("Player " + p.getPlayerDispId() + " has quit the game abruptly");
-							state.cleanUpPlayer(p);
+					if(!p.getId().equals(P2Player.getPeerProp().getPrimaryProperties().get("uuid"))){
+						if (p.getLastActiveTime() != 0) {
+							if ((curTime - p.getLastActiveTime()) > 10000) {
+								System.out.println("Player " + p.getPlayerDispId() + " has quit the game abruptly");
+								state.cleanUpPlayer(p);
+								state.setNumPlayers(state.getNumPlayers()-1);
+								P2Player.getPeerProp().getOtherPlayerProps().remove(p.getId());
+								
+								BackupUpdates updateBackup = null;
+								
+								try{
+									Registry bkpRegistry = LocateRegistry.getRegistry((String)P2Player.getPeerProp().getSecondaryPeerIp().get("ip"), Integer.parseInt((String)P2Player.getPeerProp().getSecondaryPeerIp().get("port")));
+									updateBackup = (BackupUpdates) bkpRegistry.lookup("updateBackup");
+								}catch(Exception bkpConException){
+									if(state.getNumPlayers() >= 2){
+										System.out.println("Cannot connect to backup. Nominating new backup.");
+										updateBackup = new MovePlayersImpl().nominateAltBackup();
+									}else{
+										System.out.println("Cannot connect to backup. Cannot nominate new backup.");
+										System.exit(4);
+									}
+								}
+								
+								try{
+									updateBackup.updatePeerProps(P2Player.getPeerProp());
+								}catch(Exception e){
+									e.printStackTrace();
+								}
+							}
 						}
 					}
 				}
-			
 				try {
 					Thread.sleep(10000);
 				} catch (InterruptedException ie) {

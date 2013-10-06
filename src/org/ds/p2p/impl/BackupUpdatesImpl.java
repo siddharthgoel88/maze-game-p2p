@@ -12,6 +12,7 @@ public class BackupUpdatesImpl implements BackupUpdates{
 	
 	@Override
 	public boolean updateMove(GameState currentState) throws RemoteException {
+		System.out.println("Move received in backup");
 		this.backUpGameState = currentState;
 		return true;
 	}
@@ -22,7 +23,6 @@ public class BackupUpdatesImpl implements BackupUpdates{
 
 	@Override
 	public boolean updatePeerProps(PeerProperties peerProperties)throws RemoteException {
-		System.out.println(peerProperties.getOtherPlayerProps());
 		this.backUpPeerProps = peerProperties;
 		return true;
 	}

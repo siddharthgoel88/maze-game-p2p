@@ -168,11 +168,18 @@ public class P2Player {
 	  return true;
 	}
 
-	private void initPlayer(String primaryIP, String name, String playerUUID,String machineIp, NominatorImpl nominator) throws RemoteException,AlreadyBoundException, AccessException, NotBoundException, InterruptedException {
-		Registry registry = LocateRegistry.getRegistry(primaryIP, 1099);
-		RegistryManager.setPrimaryRegistry(registry);
+	private void initPlayer(String primaryIP, String name, String playerUUID,String machineIp, NominatorImpl nominator) throws RemoteException , InterruptedException {
 		Map<String,String> playerProps = new HashMap<String, String>();
-		Bootstrapper bootstrap = (Bootstrapper) registry.lookup("bootstrapper");
+		Bootstrapper bootstrap = null;
+		try{
+			Registry registry = LocateRegistry.getRegistry(primaryIP, 1099);
+			RegistryManager.setPrimaryRegistry(registry);
+			bootstrap = (Bootstrapper) registry.lookup("bootstrapper");
+		}catch(Exception e){
+			System.out.println("Unable to boot up the network game. Please try again later. (Primary not yet started).");
+			System.exit(5);
+		}
+		
 		peerProp.getPrimaryProperties().put("ip", primaryIP); //TODO: see the above todo
 		peerProp.getPrimaryProperties().put("port", 1099);
 		Integer seed = 1099;
@@ -195,6 +202,7 @@ public class P2Player {
 		playerProps.put("name" , name);
 		peerProp.setMyIP(machineIp);
 		peerProp.setMyRMIport(seed);
+		
 		Map<String, Object> props = bootstrap.bootstrap(playerProps);
 		nominator.nominate(props);
 		gamePlayer = new Player(name , playerUUID);
@@ -246,6 +254,7 @@ public class P2Player {
 		while(!state.initializePlayer(playerUUID));
 		peerProp.getPrimaryProperties().put("ip", machineIp); //TODO: is it right machineIP or ip?
 		peerProp.getPrimaryProperties().put("port", "1099");
+		peerProp.getPrimaryProperties().put("uuid", playerUUID);
 		state.setNumPlayers(1);
 		System.out.println("\nPrimary is ready !");
 		isPrimary = true;
