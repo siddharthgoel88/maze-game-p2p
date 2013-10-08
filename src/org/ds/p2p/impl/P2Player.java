@@ -30,7 +30,8 @@ public class P2Player {
 	
 	static PeerProperties peerProp = new PeerProperties();
 	GameState state;
-	Player gamePlayer;
+	static Player gamePlayer;
+	static MovePlayers movePlayerStub = null;
 	
 	public static PeerProperties getPeerProp(){
 		return peerProp;
@@ -108,7 +109,7 @@ public class P2Player {
 		t.start();
 	}
 
-	private void initHeartBeat() {
+	public static void initHeartBeat() {
 		HeartBeatThread hbt = new HeartBeatThread();
 		hbt.setPlayer(gamePlayer);
 		Thread t = new Thread(hbt);
@@ -124,21 +125,11 @@ public class P2Player {
 
 	private void playGame() {
 		Registry registry = RegistryManager.getPrimaryRegistry();
-		MovePlayers movePlayerStub = null;
 		
-		try {
-			movePlayerStub = (MovePlayers) registry.lookup("move");
-		} catch (Exception e1) {
-			System.out.println("Issues in lookup of move registry");
-			//e1.printStackTrace();
-		} 
 		
-		try{
-			Map<String, Object> movePlMap = movePlayerStub.move(gamePlayer.getId(), "x");
-			PlayerUtils.printState((GameState) movePlMap.get("currentState"));
-		}catch(RemoteException re){
-			re.printStackTrace();
-		}
+		movePlayerStub = getRemoteObj(registry, movePlayerStub); 
+		
+		noMove();
 		
 		while(true){
 			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
@@ -164,9 +155,38 @@ public class P2Player {
 				System.out.println("Invalid Move!");
 			}
 			} catch (RemoteException e) {
-				e.printStackTrace();
+				try {
+					Thread.sleep(000);
+				} catch (InterruptedException e1) {
+					System.err.println("Move remote could not sleep");
+					//e1.printStackTrace();
+				}
+				registry = RegistryManager.getPrimaryRegistry();
+				movePlayerStub = getRemoteObj(registry, movePlayerStub);
+				noMove();
+				//e.printStackTrace();
 			}
 		}
+	}
+
+	public static void noMove() {
+		try{
+			Map<String, Object> movePlMap = movePlayerStub.move(gamePlayer.getId(), "x");
+			PlayerUtils.printState((GameState) movePlMap.get("currentState"));
+		}catch(RemoteException re){
+			re.printStackTrace();
+		}
+	}
+
+	private MovePlayers getRemoteObj(Registry registry,
+			MovePlayers movePlayerStub) {
+		try {
+			movePlayerStub = (MovePlayers) registry.lookup("move");
+		} catch (Exception e1) {
+			System.out.println("Issues in lookup of move registry");
+			//e1.printStackTrace();
+		}
+		return movePlayerStub;
 	}
 
 	private boolean initGame(String primaryIP , String name) {
@@ -225,14 +245,14 @@ public class P2Player {
 				seed++;
 			}
 		}
-		
+
 		playerProps.put("uuid", playerUUID);
 		playerProps.put("machineIP" , machineIp);
 		playerProps.put("port", seed.toString());
 		playerProps.put("name" , name);
 		peerProp.setMyIP(machineIp);
 		peerProp.setMyRMIport(seed);
-		
+
 		try
 		{
 			props = bootstrap.bootstrap(playerProps);
@@ -262,8 +282,8 @@ public class P2Player {
 		ClientHeartBeatImpl heartBeatImpl = new ClientHeartBeatImpl();
 		GameEndCheckImpl gameEndCheck = new GameEndCheckImpl();
 		PrimaryStatusImpl primaryStatus = new PrimaryStatusImpl();
-		
 		MovePlayersImpl movePlayers = new MovePlayersImpl();
+		
 		registry.bind("bootstrapper", (Bootstrapper)UnicastRemoteObject.exportObject( bootstrapper , 0));
 		registry.bind("move", (MovePlayers) UnicastRemoteObject.exportObject( movePlayers , 0));
 		registry.bind("heartBeat", (ClientHeartBeat) UnicastRemoteObject.exportObject( heartBeatImpl , 0));

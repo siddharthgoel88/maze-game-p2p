@@ -12,12 +12,7 @@ public class GameEndCheckThread implements Runnable{
 	@Override
 	public void run()
 	{
-		try {
-			gameEndObj = (GameEndCheck) RegistryManager.getPrimaryRegistry().lookup("gameEnd");
-		} catch (Exception e) {
-			System.out.println("Issues in lookup of gameEnd registry");
-			e.printStackTrace();
-		}
+		getRemoteObj();
 		
 		while(true){
 			
@@ -44,13 +39,24 @@ public class GameEndCheckThread implements Runnable{
 			}
 			catch (Exception e) {
 				try {
-					Thread.sleep(5000); //TODO: remove this delay
+					System.out.println("Oh! Some issues with server it seems. Please wait for a moment.");
+					Thread.sleep(4000); //TODO: remove this delay
+					getRemoteObj();
 				} catch (InterruptedException e1) {
 					System.err.println("Game end checker could not sleep");
 					e1.printStackTrace();
 				}
-				System.err.println("Issues in game end checker");
+				System.out.println("It seems now everything is fine.");
 			}
+		}
+	}
+
+	private void getRemoteObj() {
+		try {
+			gameEndObj = (GameEndCheck) RegistryManager.getPrimaryRegistry().lookup("gameEnd");
+		} catch (Exception e) {
+			System.out.println("Issues in lookup of gameEnd registry");
+			e.printStackTrace();
 		}
 	}
 }

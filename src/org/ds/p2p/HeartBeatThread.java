@@ -11,12 +11,7 @@ public class HeartBeatThread implements Runnable{
 	
 	@Override
 	public void run() {
-		try {
-			heartBeat = (ClientHeartBeat) RegistryManager.getPrimaryRegistry().lookup("heartBeat");
-		} catch (Exception e1) {
-			System.out.println("Issues in heartBeat registry lookup");
-			//e1.printStackTrace();
-		}
+		getRemoteObj();
 		
 		while(true){
 			try {
@@ -26,15 +21,26 @@ public class HeartBeatThread implements Runnable{
 				e.printStackTrace();
 			} catch (RemoteException re){
 				try {
+					System.out.println("Please wait for a moment.");
 					Thread.sleep(5000);//TODO: remove this delay
+					getRemoteObj();
 				} catch (InterruptedException e) {
 					System.err.println("Cannot sleep in hearth beat thread");
 					e.printStackTrace();
 				}
-				System.err.println("Issues in heart beat update");;
+				System.out.println("Yeah, now you can continue");
 				// TODO : Just keep a check here. 
-				//re.printStackTrace();
 			}
+		}
+	}
+
+	private void getRemoteObj() {
+		try {
+			heartBeat = (ClientHeartBeat) RegistryManager.getPrimaryRegistry().lookup("heartBeat");
+			System.out.println("New Primary bounds:" + RegistryManager.getPrimaryRegistry().list());
+		} catch (Exception e1) {
+			System.out.println("Issues in heartBeat registry lookup");
+			//e1.printStackTrace();
 		}
 	}
 

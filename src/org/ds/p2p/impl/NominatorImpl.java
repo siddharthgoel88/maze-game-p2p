@@ -5,6 +5,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 
 import org.ds.p2p.BackupUpdates;
+import org.ds.p2p.FailureUpdate;
 import org.ds.p2p.PeerProperties;
 
 public class NominatorImpl  {	
@@ -23,9 +24,13 @@ public class NominatorImpl  {
 		
 		Registry registry = RegistryManager.getRegistry();
 		BackupUpdatesImpl updateMoves = new BackupUpdatesImpl();
+		FailureUpdateImpl failureUpdate = new FailureUpdateImpl();
 		
 		try {
 			registry.bind("updateBackup", (BackupUpdates) UnicastRemoteObject.exportObject( updateMoves , 0));
+			if(!(Boolean)gameProps.get("isNominated")){
+				registry.bind("failureUpdate", (FailureUpdate) UnicastRemoteObject.exportObject( failureUpdate , 0));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 

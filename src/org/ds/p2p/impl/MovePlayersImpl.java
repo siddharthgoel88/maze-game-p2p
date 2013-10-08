@@ -52,12 +52,12 @@ public class MovePlayersImpl implements MovePlayers{
 		
 		Map<String,Object> map = moveIfValid(player, move);
 		
-		if( !move.equals(MoveConstants.NOMOVE) && isAnyBackupAvailable )
+		if(/* !move.equals(MoveConstants.NOMOVE) &&*/ isAnyBackupAvailable )
 			updateBackup.updateMove(state);
 		return map;
 	}
 	
-	public BackupUpdates nominateAltBackup() {
+	public static BackupUpdates nominateAltBackup() {
 		
 		HashMap<String, String> playerProps = P2Player.getPeerProp().getOtherPlayerProps();
 		Set<String> nextbkp =  playerProps.keySet();
@@ -84,6 +84,7 @@ public class MovePlayersImpl implements MovePlayers{
 			P2Player.getPeerProp().getSecondaryPeerIp().put("port", port);
 			try {
 				updates.updateBckProps(ip,port);
+				P2Player.initPrimaryPoll();
 			} catch (RemoteException e) {
 				System.out.println("Backup props update failure");
 				e.printStackTrace();

@@ -8,13 +8,13 @@ import org.ds.p2p.PeerProperties;
 
 public class BackupUpdatesImpl implements BackupUpdates{
 	PeerProperties peerProps;
-	GameState backUpGameState;
-	PeerProperties backUpPeerProps;
+	static GameState backUpGameState;
+	static PeerProperties backUpPeerProps;
 	
 	@Override
 	public boolean updateMove(GameState currentState) throws RemoteException {
 		System.out.println("Move received in backup");
-		this.backUpGameState = currentState;
+		backUpGameState = currentState;
 		return true;
 	}
 
@@ -24,7 +24,7 @@ public class BackupUpdatesImpl implements BackupUpdates{
 
 	@Override
 	public boolean updatePeerProps(PeerProperties peerProperties)throws RemoteException {
-		this.backUpPeerProps = peerProperties;
+		backUpPeerProps = peerProperties;
 		return true;
 	}
 
@@ -32,16 +32,11 @@ public class BackupUpdatesImpl implements BackupUpdates{
 		return backUpPeerProps;
 	}
 
-	public void setBackUpPeerProps(PeerProperties backUpPeerProps) {
-		this.backUpPeerProps = backUpPeerProps;
-	}
-
 	@Override
 	public boolean updateBckProps(String ip, String port) throws RemoteException {
 		
 		peerProps = P2Player.getPeerProp();
 		peerProps.setBackup(true);
-		P2Player.initPrimaryPoll();
 		
 		return true;
 	}

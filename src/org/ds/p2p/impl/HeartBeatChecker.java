@@ -39,7 +39,7 @@ public class HeartBeatChecker implements Runnable {
 								}catch(Exception bkpConException){
 									if(state.getNumPlayers() >= 2){
 										System.out.println("Cannot connect to backup. Nominating new backup.");
-										updateBackup = new MovePlayersImpl().nominateAltBackup();
+										updateBackup = MovePlayersImpl.nominateAltBackup();
 									}else{
 										System.out.println("Cannot connect to backup. Cannot nominate new backup.");
 										System.exit(4);

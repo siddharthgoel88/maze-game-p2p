@@ -13,8 +13,8 @@ public class PeerProperties implements Serializable{
 	private static final long serialVersionUID = -5024161539536334595L;
 	boolean isPrimary = false;
 	boolean isBackup = false;
-	String myIP = null;
-	int myRMIport;
+	static String myIP = null;
+	static int myRMIport;
 	Long initTime;
 	HashMap<String,Object> primaryProperties = new HashMap<String, Object>();
 	HashMap<String,Object> secondaryProperties = new HashMap<String, Object>();
@@ -52,8 +52,8 @@ public class PeerProperties implements Serializable{
 		return myIP;
 	}
 
-	public void setMyIP(String myIP) {
-		this.myIP = myIP;
+	public void setMyIP(String IP) {
+		myIP = IP;
 	}
 
 	public Long getInitTime() {
@@ -76,7 +76,7 @@ public class PeerProperties implements Serializable{
 		return myRMIport;
 	}
 
-	public void setMyRMIport(int myRMIport) {
-		this.myRMIport = myRMIport;
+	public void setMyRMIport(int RMIport) {
+		myRMIport = RMIport;
 	}
 }
