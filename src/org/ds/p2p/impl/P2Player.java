@@ -173,6 +173,8 @@ public class P2Player {
 	private void initPlayer(String primaryIP, String name, String playerUUID,String machineIp, NominatorImpl nominator) throws RemoteException , InterruptedException {
 		Map<String,String> playerProps = new HashMap<String, String>();
 		Bootstrapper bootstrap = null;
+		Map<String, Object> props = null;
+		
 		try{
 			Registry registry = LocateRegistry.getRegistry(primaryIP, 1099);
 			RegistryManager.setPrimaryRegistry(registry);
@@ -205,7 +207,14 @@ public class P2Player {
 		peerProp.setMyIP(machineIp);
 		peerProp.setMyRMIport(seed);
 		
-		Map<String, Object> props = bootstrap.bootstrap(playerProps);
+		try
+		{
+			props = bootstrap.bootstrap(playerProps);
+		}
+		catch(Exception e)
+		{
+			System.out.println("Issues in bootstrap call. Check /etc/hosts");
+		}
 		nominator.nominate(props);
 		gamePlayer = new Player(name , playerUUID);
 		gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
