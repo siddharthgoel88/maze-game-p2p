@@ -9,4 +9,8 @@ public class GameStateFactory {
 		}
 		return state;
 	}
+
+	public static void setState(GameState state) {
+		GameStateFactory.state = state;
+	}
 }

@@ -7,6 +7,7 @@ import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.PeerProperties;
 
 public class BackupUpdatesImpl implements BackupUpdates{
+	PeerProperties peerProps;
 	GameState backUpGameState;
 	PeerProperties backUpPeerProps;
 	
@@ -33,5 +34,15 @@ public class BackupUpdatesImpl implements BackupUpdates{
 
 	public void setBackUpPeerProps(PeerProperties backUpPeerProps) {
 		this.backUpPeerProps = backUpPeerProps;
+	}
+
+	@Override
+	public boolean updateBckProps(String ip, String port) throws RemoteException {
+		
+		peerProps = P2Player.getPeerProp();
+		peerProps.setBackup(true);
+		P2Player.initPrimaryPoll();
+		
+		return true;
 	}
 }

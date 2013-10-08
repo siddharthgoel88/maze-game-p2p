@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.ds.p2p.Player;
 import org.ds.p2p.Square;
+import org.ds.p2p.impl.P2Player;
 
 public class GameState implements Serializable {
 	/**
@@ -85,6 +86,7 @@ public class GameState implements Serializable {
 	}
 	
 	public void cleanUpPlayer(Player player){
+		P2Player.getPeerProp().getOtherPlayerProps().remove(player.getId());
 		gameBoard[player.currentRow][player.currentCol].isFree = true;
 		gameBoard[player.currentRow][player.currentCol].userId = null;
 		players.remove(player.id);

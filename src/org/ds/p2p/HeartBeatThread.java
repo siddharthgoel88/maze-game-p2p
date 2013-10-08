@@ -15,7 +15,7 @@ public class HeartBeatThread implements Runnable{
 			heartBeat = (ClientHeartBeat) RegistryManager.getPrimaryRegistry().lookup("heartBeat");
 		} catch (Exception e1) {
 			System.out.println("Issues in heartBeat registry lookup");
-			e1.printStackTrace();
+			//e1.printStackTrace();
 		}
 		
 		while(true){
@@ -25,8 +25,15 @@ public class HeartBeatThread implements Runnable{
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} catch (RemoteException re){
+				try {
+					Thread.sleep(5000);//TODO: remove this delay
+				} catch (InterruptedException e) {
+					System.err.println("Cannot sleep in hearth beat thread");
+					e.printStackTrace();
+				}
+				System.err.println("Issues in heart beat update");;
 				// TODO : Just keep a check here. 
-				re.printStackTrace();
+				//re.printStackTrace();
 			}
 		}
 	}

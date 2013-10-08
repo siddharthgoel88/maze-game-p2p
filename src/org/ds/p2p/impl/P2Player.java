@@ -24,6 +24,7 @@ import org.ds.p2p.HeartBeatThread;
 import org.ds.p2p.MovePlayers;
 import org.ds.p2p.PeerProperties;
 import org.ds.p2p.Player;
+import org.ds.p2p.PrimaryStatus;
 
 public class P2Player {
 	
@@ -33,6 +34,10 @@ public class P2Player {
 	
 	public static PeerProperties getPeerProp(){
 		return peerProp;
+	}
+	
+	public static void setPeerProp(PeerProperties props){
+		peerProp = props;
 	}
 	
 	public static void main(String[] args) {
@@ -61,7 +66,28 @@ public class P2Player {
 		
 		initHeartBeat();
 		initGameEndCheck();
+		if(peerProp.isBackup())
+			initPrimaryPoll();
 		playGame();	
+	}
+
+	public static void initPrimaryPoll() {
+		PrimaryStatus primaryStatus = null;
+		
+		try
+		{
+			primaryStatus = (PrimaryStatus) RegistryManager.getPrimaryRegistry().lookup("primaryStatus");
+		}
+		catch(Exception e)
+		{
+			System.out.println("Issues in polling primary");
+			e.printStackTrace();
+		}
+		
+		PrimaryStatusChecker psc = new PrimaryStatusChecker();
+		psc.setPrimaryStatus(primaryStatus);
+		Thread t = new Thread(psc);
+		t.start();
 	}
 
 	private void updateBackupPeerProps() {
@@ -104,7 +130,7 @@ public class P2Player {
 			movePlayerStub = (MovePlayers) registry.lookup("move");
 		} catch (Exception e1) {
 			System.out.println("Issues in lookup of move registry");
-			e1.printStackTrace();
+			//e1.printStackTrace();
 		} 
 		
 		try{
@@ -235,12 +261,14 @@ public class P2Player {
 		BootstrapperImpl bootstrapper = new BootstrapperImpl();
 		ClientHeartBeatImpl heartBeatImpl = new ClientHeartBeatImpl();
 		GameEndCheckImpl gameEndCheck = new GameEndCheckImpl();
+		PrimaryStatusImpl primaryStatus = new PrimaryStatusImpl();
 		
 		MovePlayersImpl movePlayers = new MovePlayersImpl();
 		registry.bind("bootstrapper", (Bootstrapper)UnicastRemoteObject.exportObject( bootstrapper , 0));
 		registry.bind("move", (MovePlayers) UnicastRemoteObject.exportObject( movePlayers , 0));
 		registry.bind("heartBeat", (ClientHeartBeat) UnicastRemoteObject.exportObject( heartBeatImpl , 0));
 		registry.bind("gameEnd", (GameEndCheck) UnicastRemoteObject.exportObject( gameEndCheck , 0));
+		registry.bind("primaryStatus", (PrimaryStatus) UnicastRemoteObject.exportObject( primaryStatus , 0));
 		peerProp.setPrimary(true);
 		System.out.println("You are the game initiater.\nPlease enter size of board and total number of treasures: ");
 		BufferedReader boardSize = new BufferedReader(new InputStreamReader(System.in));

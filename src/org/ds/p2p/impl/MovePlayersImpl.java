@@ -82,6 +82,12 @@ public class MovePlayersImpl implements MovePlayers{
 		if(nominateSuccessful){
 			P2Player.getPeerProp().getSecondaryPeerIp().put("ip", ip);
 			P2Player.getPeerProp().getSecondaryPeerIp().put("port", port);
+			try {
+				updates.updateBckProps(ip,port);
+			} catch (RemoteException e) {
+				System.out.println("Backup props update failure");
+				e.printStackTrace();
+			}
 		}else{
 			System.out.println("No players available for backup! Thanks for your keen interest in the game. Please play again");
 			System.exit(4);

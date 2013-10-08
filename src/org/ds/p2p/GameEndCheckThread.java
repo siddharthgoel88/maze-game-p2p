@@ -43,7 +43,13 @@ public class GameEndCheckThread implements Runnable{
 			  }		
 			}
 			catch (Exception e) {
-				
+				try {
+					Thread.sleep(5000); //TODO: remove this delay
+				} catch (InterruptedException e1) {
+					System.err.println("Game end checker could not sleep");
+					e1.printStackTrace();
+				}
+				System.err.println("Issues in game end checker");
 			}
 		}
 	}
