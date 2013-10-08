@@ -12,7 +12,6 @@ import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.MoveConstants;
 import org.ds.p2p.MovePlayers;
-import org.ds.p2p.PeerProperties;
 import org.ds.p2p.Player;
 import org.ds.p2p.Square;
 
@@ -41,7 +40,7 @@ public class MovePlayersImpl implements MovePlayers{
 				}
 			}else{
 				System.out.println("Cannot connect to backup. Cannot nominate new backup.");
-				isAnyBackupAvailable = false;
+				isAnyBackupAvailable = false; //TODO: should we stop the game here?
 			}
 		}
 		if(move.equals(MoveConstants.KILL)){

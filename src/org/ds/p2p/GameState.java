@@ -15,8 +15,8 @@ public class GameState implements Serializable {
 	 */
 	
 	private static final long serialVersionUID = 356185318404742910L;
-	private int BOARD_SIZE=5;
-	private int totalNumTreasures=10;
+	private int BOARD_SIZE;
+	private int totalNumTreasures;
 	private Square[][] gameBoard;
 	private ArrayList<Player> winner = new ArrayList<Player>();
 	private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<String, Player>();
@@ -26,7 +26,6 @@ public class GameState implements Serializable {
 	public GameState(){
 		
 	}
-
 	
 	public Square[][] getGameBoard() {
 		return gameBoard;

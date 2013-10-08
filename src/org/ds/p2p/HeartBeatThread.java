@@ -14,6 +14,7 @@ public class HeartBeatThread implements Runnable{
 		try {
 			heartBeat = (ClientHeartBeat) RegistryManager.getPrimaryRegistry().lookup("heartBeat");
 		} catch (Exception e1) {
+			System.out.println("Issues in heartBeat registry lookup");
 			e1.printStackTrace();
 		}
 		

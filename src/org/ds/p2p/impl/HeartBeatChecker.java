@@ -3,8 +3,6 @@ package org.ds.p2p.impl;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Set;
 
 import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.GameState;

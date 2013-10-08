@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.rmi.AccessException;
 import java.rmi.AlreadyBoundException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -17,14 +16,14 @@ import java.util.UUID;
 import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.Bootstrapper;
 import org.ds.p2p.ClientHeartBeat;
-import org.ds.p2p.GameEndCheckThread;
 import org.ds.p2p.GameEndCheck;
+import org.ds.p2p.GameEndCheckThread;
 import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.HeartBeatThread;
+import org.ds.p2p.MovePlayers;
 import org.ds.p2p.PeerProperties;
 import org.ds.p2p.Player;
-import org.ds.p2p.MovePlayers;
 
 public class P2Player {
 	
@@ -71,6 +70,8 @@ public class P2Player {
 			BackupUpdates bkp = (BackupUpdates) reg.lookup("updateBackup");
 			bkp.updatePeerProps(peerProp);
 		}catch(Exception e){
+			System.out.println("No other player has joined. Please try again later.");
+			System.exit(6);
 			e.printStackTrace();
 		}	
 	}
@@ -102,6 +103,7 @@ public class P2Player {
 		try {
 			movePlayerStub = (MovePlayers) registry.lookup("move");
 		} catch (Exception e1) {
+			System.out.println("Issues in lookup of move registry");
 			e1.printStackTrace();
 		} 
 		
@@ -208,7 +210,7 @@ public class P2Player {
 		gamePlayer = new Player(name , playerUUID);
 		gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
 		Long waitTime = (Long) props.get("waitTime");
-		System.out.println("Expected waiting time:" + waitTime/1000 + "seconds.");
+		System.out.println("Expected waiting time:" + waitTime/1000 + " seconds.");
 		Thread.sleep(waitTime);
 	}
 
