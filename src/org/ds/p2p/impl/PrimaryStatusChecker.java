@@ -9,8 +9,10 @@ import java.util.Set;
 import org.ds.p2p.ClientHeartBeat;
 import org.ds.p2p.FailureUpdate;
 import org.ds.p2p.GameEndCheck;
+import org.ds.p2p.GameState;
 import org.ds.p2p.GameStateFactory;
 import org.ds.p2p.MovePlayers;
+import org.ds.p2p.Player;
 import org.ds.p2p.PrimaryStatus;
 
 public class PrimaryStatusChecker implements Runnable{
@@ -18,6 +20,7 @@ public class PrimaryStatusChecker implements Runnable{
 	PrimaryStatus primaryStatus = null;
 	static int noOfTries = 1;
 	static int flag = 1;
+	private String oldPrimaryUUID = null;
 	
 	@Override
 	public void run() {
@@ -33,6 +36,11 @@ public class PrimaryStatusChecker implements Runnable{
 				if(noOfTries < 3)
 				{
 					System.out.println("Cannot Reach server. Try No. " + noOfTries);
+					try{
+						Thread.sleep(500);
+					}catch(Exception e1){
+						
+					}
 					noOfTries++;
 				}
 				else
@@ -82,23 +90,29 @@ public class PrimaryStatusChecker implements Runnable{
 		System.out.println("Backup Game state. No of treasure:"+ BackupUpdatesImpl.backUpGameState.getTotalNumTreasures());
 		GameStateFactory.setState(BackupUpdatesImpl.backUpGameState);
 		P2Player.setPeerProp(BackupUpdatesImpl.backUpPeerProps);
+		oldPrimaryUUID = (String) P2Player.getPeerProp().getPrimaryProperties().get("uuid");
 		P2Player.getPeerProp().setPrimary(true);
 		P2Player.getPeerProp().setBackup(false);
 		P2Player.getPeerProp().getPrimaryProperties().put("uuid", P2Player.gamePlayer.getId());
 		P2Player.getPeerProp().getPrimaryProperties().put("ip", P2Player.getPeerProp().getMyIP());
 		P2Player.getPeerProp().getPrimaryProperties().put("port", String.valueOf(P2Player.getPeerProp().getMyRMIport()));
-		P2Player.getPeerProp().getOtherPlayerProps().remove(P2Player.gamePlayer.getId());
 		initiateRegistries();
 	}
 
 	private void initiateRegistries() {
 		Registry registry = RegistryManager.getRegistry();
 		RegistryManager.setPrimaryRegistry(registry);
-		registry = RegistryManager.getPrimaryRegistry();
+		
 		ClientHeartBeatImpl heartBeatImpl = new ClientHeartBeatImpl();
 		GameEndCheckImpl gameEndCheck = new GameEndCheckImpl();
 		PrimaryStatusImpl primaryStatus = new PrimaryStatusImpl();
 		MovePlayersImpl movePlayers = new MovePlayersImpl();
+		GameState state = GameStateFactory.getGameState();
+		
+		for( Player p : state.getPlayers().values() ){
+			if(!p.getId().equals(oldPrimaryUUID))
+				p.setLastActiveTime(0L);
+		}
 		
 		try
 		{

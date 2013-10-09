@@ -4,6 +4,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 
+import javax.sound.midi.SysexMessage;
+
 import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.FailureUpdate;
 import org.ds.p2p.PeerProperties;
@@ -11,17 +13,21 @@ import org.ds.p2p.PeerProperties;
 public class NominatorImpl  {	
 	public void nominate(Map<String,Object> gameProps) {
 		PeerProperties peerPros = P2Player.getPeerProp();
-		
-		if((Boolean)gameProps.get("isNominated")){
-			System.out.println("I have been nominated as backup! Yahoo");
-			peerPros.getSecondaryPeerIp().put("ip", peerPros.getMyIP());
-			peerPros.getSecondaryPeerIp().put("port", peerPros.getMyRMIport());
-			peerPros.setBackup(true);
-		}else{
-			System.out.println("I have not been nominated as backup! Yahoo");
-			peerPros.setBackup(false);
+		try{
+			
+			if((Boolean)gameProps.get("isNominated")){
+				System.out.println("I have been nominated as backup! Yahoo");
+				peerPros.getSecondaryPeerIp().put("ip", peerPros.getMyIP());
+				peerPros.getSecondaryPeerIp().put("port", peerPros.getMyRMIport());
+				peerPros.setBackup(true);
+			}else{
+				System.out.println("I have not been nominated as backup! Yahoo");
+				peerPros.setBackup(false);
+			}
+		}catch(Exception e){
+			System.out.println("Game not yet initialized by primary ! Please join later.");
+			System.exit(7);
 		}
-		
 		Registry registry = RegistryManager.getRegistry();
 		BackupUpdatesImpl updateMoves = new BackupUpdatesImpl();
 		FailureUpdateImpl failureUpdate = new FailureUpdateImpl();

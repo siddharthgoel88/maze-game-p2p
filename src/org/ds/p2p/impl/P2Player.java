@@ -77,6 +77,7 @@ public class P2Player {
 		
 		try
 		{
+			System.out.println("Primary polling started");
 			primaryStatus = (PrimaryStatus) RegistryManager.getPrimaryRegistry().lookup("primaryStatus");
 		}
 		catch(Exception e)
@@ -96,6 +97,7 @@ public class P2Player {
 			Registry reg = LocateRegistry.getRegistry((String) peerProp.getSecondaryPeerIp().get("ip") , Integer.parseInt((String)peerProp.getSecondaryPeerIp().get("port")));
 			BackupUpdates bkp = (BackupUpdates) reg.lookup("updateBackup");
 			bkp.updatePeerProps(peerProp);
+			bkp.updateMove(GameStateFactory.getGameState());
 		}catch(Exception e){
 			System.out.println("No other player has joined. Please try again later.");
 			System.exit(6);
@@ -156,7 +158,7 @@ public class P2Player {
 			}
 			} catch (RemoteException e) {
 				try {
-					Thread.sleep(000);
+					Thread.sleep(5000);
 				} catch (InterruptedException e1) {
 					System.err.println("Move remote could not sleep");
 					//e1.printStackTrace();

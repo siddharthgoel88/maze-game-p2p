@@ -42,6 +42,7 @@ public class HeartBeatChecker implements Runnable {
 										updateBackup = MovePlayersImpl.nominateAltBackup();
 									}else{
 										System.out.println("Cannot connect to backup. Cannot nominate new backup.");
+										System.out.println("Thanks for your interest in our game. Please play again with your friends later.");
 										System.exit(4);
 									}
 								}

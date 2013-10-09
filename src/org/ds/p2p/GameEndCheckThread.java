@@ -40,7 +40,7 @@ public class GameEndCheckThread implements Runnable{
 			catch (Exception e) {
 				try {
 					System.out.println("Oh! Some issues with server it seems. Please wait for a moment.");
-					Thread.sleep(4000); //TODO: remove this delay
+					Thread.sleep(5000); //TODO: remove this delay
 					getRemoteObj();
 				} catch (InterruptedException e1) {
 					System.err.println("Game end checker could not sleep");

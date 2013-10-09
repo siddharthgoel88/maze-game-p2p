@@ -79,12 +79,15 @@ public class MovePlayersImpl implements MovePlayers{
 				System.out.println("Player has quit but system not yet detected the exit. Nominating the next player as backup");
 			}
 		}
+		// TODO: Send latest snapshots of state & props
 		if(nominateSuccessful){
 			P2Player.getPeerProp().getSecondaryPeerIp().put("ip", ip);
 			P2Player.getPeerProp().getSecondaryPeerIp().put("port", port);
+			System.out.println("Next secondary : " + ip +":" + port);
 			try {
 				updates.updateBckProps(ip,port);
-				P2Player.initPrimaryPoll();
+				updates.updateMove(GameStateFactory.getGameState());
+				updates.updatePeerProps(P2Player.getPeerProp());
 			} catch (RemoteException e) {
 				System.out.println("Backup props update failure");
 				e.printStackTrace();
