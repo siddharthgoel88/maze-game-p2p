@@ -56,7 +56,6 @@ public class GameEndCheckThread implements Runnable{
 			gameEndObj = (GameEndCheck) RegistryManager.getPrimaryRegistry().lookup("gameEnd");
 		} catch (Exception e) {
 			System.out.println("Issues in lookup of gameEnd registry");
-			e.printStackTrace();
 		}
 	}
 }

@@ -16,7 +16,6 @@ public class FailureUpdateImpl implements FailureUpdate {
 		System.out.println("IP:" + ip + "Port:"+port);
 		Registry reg = LocateRegistry.getRegistry(ip,port);
 		RegistryManager.setPrimaryRegistry(reg);
-		
 		return true;
 	}
 

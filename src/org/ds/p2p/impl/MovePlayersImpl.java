@@ -49,7 +49,7 @@ public class MovePlayersImpl implements MovePlayers{
 			updateBackup.updateMove(state);
 			return null;
 		}
-		
+		System.out.println("Player " + player.getPlayerDispId() + " is trying to move.");
 		Map<String,Object> map = moveIfValid(player, move);
 		
 		if(/* !move.equals(MoveConstants.NOMOVE) &&*/ isAnyBackupAvailable )
@@ -65,8 +65,12 @@ public class MovePlayersImpl implements MovePlayers{
 		BackupUpdates updates = null;
 		String ip = null , port = null;
 		boolean nominateSuccessful = false;
+		String nominatedUUID = null;
 		
-		for(String otherPlayerHosts : nextbkp){
+		System.out.println("No of other players:" + P2Player.getPeerProp().getOtherPlayerProps().size());
+		
+		for( String otherPlayerHosts : nextbkp) {
+			
 			ip = playerProps.get(otherPlayerHosts).split(":")[0];
 			port = playerProps.get(otherPlayerHosts).split(":")[1];
 			
@@ -74,16 +78,20 @@ public class MovePlayersImpl implements MovePlayers{
 				bkpRegistry = LocateRegistry.getRegistry( ip , Integer.parseInt(port) );
 				updates = (BackupUpdates) bkpRegistry.lookup("updateBackup");
 				nominateSuccessful = true;
+				nominatedUUID = otherPlayerHosts;
 				break;
 			}  catch (Exception e) {
 				System.out.println("Player has quit but system not yet detected the exit. Nominating the next player as backup");
 			}
 		}
+	
+		P2Player.getPeerProp().getOtherPlayerProps().remove(nominatedUUID);
 		// TODO: Send latest snapshots of state & props
 		if(nominateSuccessful){
 			P2Player.getPeerProp().getSecondaryPeerIp().put("ip", ip);
 			P2Player.getPeerProp().getSecondaryPeerIp().put("port", port);
 			System.out.println("Next secondary : " + ip +":" + port);
+			
 			try {
 				updates.updateBckProps(ip,port);
 				updates.updateMove(GameStateFactory.getGameState());
@@ -96,6 +104,7 @@ public class MovePlayersImpl implements MovePlayers{
 			System.out.println("No players available for backup! Thanks for your keen interest in the game. Please play again");
 			System.exit(4);
 		}
+		
 		return updates;
 	}
 

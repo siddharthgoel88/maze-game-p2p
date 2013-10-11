@@ -142,32 +142,45 @@ public class P2Player {
 				e.printStackTrace();
 			}
 		try {
-			if(move.matches("[asdwx]")){
-				Map<String,Object> moveResult = movePlayerStub.move(gamePlayer.getId(), move);
-				if( !Boolean.valueOf((String) moveResult.get("isSuccessful")) ){
-					System.out.println("Player move invalid.");
-				}else{
-					PlayerUtils.printState((GameState) moveResult.get("currentState"));
-				}
-			}else if(move.equals("k")){
-				movePlayerStub.move(gamePlayer.getId(), move);
-				System.out.println("Game stopped voluntarily. Please play again.");
-				System.exit(2);
-			}else{
-				System.out.println("Invalid Move!");
-			}
+			registry = RegistryManager.getPrimaryRegistry();
+			getRemoteObj(registry, movePlayerStub);
+			executeMove(move);
 			} catch (RemoteException e) {
+				System.out.println("Primary failure detected. Game interuppted for 2 sec.");
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(2000);
 				} catch (InterruptedException e1) {
-					System.err.println("Move remote could not sleep");
-					//e1.printStackTrace();
+					System.out.println("Move sleep interupt detected.");
 				}
+				
 				registry = RegistryManager.getPrimaryRegistry();
 				movePlayerStub = getRemoteObj(registry, movePlayerStub);
-				noMove();
-				//e.printStackTrace();
+				try
+				{
+					executeMove(move);
+				}
+				catch(Exception e2)
+				{
+					System.out.println("Still could not connect to primary. Try the move again.");
+				}
 			}
+		}
+	}
+
+	private void executeMove(String move) throws RemoteException {
+		if(move.matches("[asdwx]")){
+			Map<String,Object> moveResult = movePlayerStub.move(gamePlayer.getId(), move);
+			if( !Boolean.valueOf((String) moveResult.get("isSuccessful")) ){
+				System.out.println("Player move invalid.");
+			}else{
+				PlayerUtils.printState((GameState) moveResult.get("currentState"));
+			}
+		}else if(move.equals("k")){
+			movePlayerStub.move(gamePlayer.getId(), move);
+			System.out.println("Game stopped voluntarily. Please play again.");
+			System.exit(2);
+		}else{
+			System.out.println("Invalid Move!");
 		}
 	}
 
@@ -185,8 +198,6 @@ public class P2Player {
 		try {
 			movePlayerStub = (MovePlayers) registry.lookup("move");
 		} catch (Exception e1) {
-			System.out.println("Issues in lookup of move registry");
-			//e1.printStackTrace();
 		}
 		return movePlayerStub;
 	}
@@ -195,7 +206,6 @@ public class P2Player {
 		boolean isPrimary = false;
 		String playerUUID = UUID.randomUUID().toString();
 		String machineIp = PlayerUtils.getIP4Adress();
-		System.out.println(machineIp);
 		peerProp.setMyIP(machineIp);
 		
         if(primaryIP.equals(machineIp)){
@@ -267,6 +277,11 @@ public class P2Player {
 		gamePlayer = new Player(name , playerUUID);
 		gamePlayer.setPlayerDispId((props.get("playerDispId")).toString().charAt(0));
 		Long waitTime = (Long) props.get("waitTime");
+		if(waitTime <= 0)
+		{
+			System.out.println("Ohhhh! The game has already started. Try to play the next time.");
+			System.exit(1);
+		}
 		System.out.println("Expected waiting time:" + waitTime/1000 + " seconds.");
 		Thread.sleep(waitTime);
 	}

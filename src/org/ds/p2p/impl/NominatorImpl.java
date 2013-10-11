@@ -4,8 +4,6 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 
-import javax.sound.midi.SysexMessage;
-
 import org.ds.p2p.BackupUpdates;
 import org.ds.p2p.FailureUpdate;
 import org.ds.p2p.PeerProperties;

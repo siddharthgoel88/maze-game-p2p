@@ -13,6 +13,7 @@ public class BackupUpdatesImpl implements BackupUpdates{
 	
 	@Override
 	public boolean updateMove(GameState currentState) throws RemoteException {
+		System.out.println("An update by Primary Server.");
 		backUpGameState = currentState;
 		return true;
 	}

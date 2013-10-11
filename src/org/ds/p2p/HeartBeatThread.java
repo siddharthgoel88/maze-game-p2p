@@ -26,10 +26,8 @@ public class HeartBeatThread implements Runnable{
 					getRemoteObj();
 				} catch (InterruptedException e) {
 					System.err.println("Cannot sleep in hearth beat thread");
-					e.printStackTrace();
 				}
 				System.out.println("Yeah, now you can continue");
-				// TODO : Just keep a check here. 
 			}
 		}
 	}
@@ -37,7 +35,6 @@ public class HeartBeatThread implements Runnable{
 	private void getRemoteObj() {
 		try {
 			heartBeat = (ClientHeartBeat) RegistryManager.getPrimaryRegistry().lookup("heartBeat");
-			System.out.println("New Primary bounds:" + RegistryManager.getPrimaryRegistry().list());
 		} catch (Exception e1) {
 			System.out.println("Issues in heartBeat registry lookup");
 			//e1.printStackTrace();
